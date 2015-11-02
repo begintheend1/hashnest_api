@@ -1,34 +1,15 @@
-
 from urllib import urlencode
 import urllib2,json
 import time,datetime
 import hashlib,hmac,base64
 
 
-
+#SELL='sale'
+#BUY='purchase'
 class hashnest(object):
-
-    BASEURL='https://www.hashnest.com/api/'
-    APIVERSION='v1'
-    URL=BASEURL+APIVERSION+'/'
-    URL_ACCOUNT='account'
-    URL_BALANCE='currency_accounts'
-    URL_HASHRATE='hash_accounts'
-    URL_CREATE_ORDER='orders'
-    URL_ORDERS='orders/active'
-    URL_HISTORY='orders/history'
-    URL_DELETE_ORDER='orders/revoke'
-    URL_DELETE_ALL_ORDERS='orders/quick_revoke'
-    URL_OPENED_MARKETS='currency_markets'
-    URL_CURRENCY_ORDERS='currency_markets/orders'
-    URL_CURRENCY_TRADES='currency_markets/order_history'
-    SELL='sale'
-    BUY='purchase'
+    
+    URL = 'https://www.hashnest.com/api/v1/'
  
-
-
- 
-
     def __init__(self,username,key,secret):
         self.username=username
         self.key=key
@@ -41,75 +22,71 @@ class hashnest(object):
         self.nonce= int((a-b).total_seconds()*1000)
         return self.nonce
 
-
-  
-  
-    def sign(self,req):
+    def signature(self,req):
         nonce=self.get_nonce()
         message = str(nonce) + self.username + self.key
         req['access_key']=self.key
         req['nonce']=nonce
-        req['signature']= hmac.new( self.secret, msg=message, digestmod=hashlib.sha256).hexdigest() 
+        req['signature']= hmac.new(self.secret, msg=message, digestmod=hashlib.sha256).hexdigest() 
         return urlencode(req)
      
-    def perform_private(self,url,req={}):
-        url=baseurl=self.URL+url
-        data=self.sign(req)
+    def request(self,url,req={}):
+        url = self.URL + url
+        data= self.signature(req)
         request= urllib2.Request(url, data)
         resp = urllib2.urlopen(request)
         r=resp.read()
-        try: return json.loads(r)
-        except: return r
+        return r
   
     
     def get_account_info(self):
-        return self.perform_private(self.URL_ACCOUNT)
+        return self.request('account')
   
     def get_account_balance(self):
-        return self.perform_private(self.URL_BALANCE)
+        return self.request('currency_accounts')
   
     def get_account_hashrate(self):
-        return self.perform_private(self.URL_HASHRATE)
+        return self.request('hash_accounts')
   
     def get_orders(self,cmi):
         param={'currency_market_id':cmi}
-        return self.perform_private(self.URL_ORDERS,param)
+        return self.request('orders/active',param)
   
-    def get_history(self,cmi,page=1,page_amount=20):
+    def get_history(self,cmi,page=1,page_amount=10):
         param={'currency_market_id':cmi}
         param['page']=page
         param['page_per_amount']=page_amount
-        return self.perform_private(self.URL_HISTORY,param)
+        return self.request('orders/history',param)
   
     def create_order(self,cmi,amount,ppc,category):
         param={'currency_market_id':cmi}
         param['amount']=amount
         param['ppc']=ppc
         param['category']=category
-        return self.perform_private(self.URL_CREATE_ORDER,param)
+        return self.request('orders',param)
   
     def delete_order(self,order_id):
         param={'order_id':order_id}
-        return self.perform_private(self.URL_DELETE_ORDER,param)
+        return self.request('orders/revoke',param)
   
     def delete_all_orders(self,cmi,category):
         param={'currency_market_id':cmi}
         param['category']=category
-        return self.perform_private(self.URL_DELETE_ALL_ORDERS,param)
+        return self.request('orders/quick_revoke',param)
   
     def get_opened_markets(self):
-        return self.perform_private(self.URL_OPENED_MARKETS)
+        return self.request('currency_markets')
   
     def get_currency_orders(self,cmi):
         param={'currency_market_id':cmi}
-        return self.perform_private(self.URL_CURRENCY_ORDERS,param)
+        return self.request('currency_markets/orders',param)
   
-    def get_currency_trades(self,cmi,category,page=1,page_amount=20):
+    def get_currency_trades(self,cmi,category,page=1,page_amount=10):
         param={'currency_market_id':cmi}
         param['page']=page
         param['page_per_amount']=page_amount
         param['category']=category
-        return self.perform_private(self.URL_CURRENCY_TRADES,param)
+        return self.request('currency_markets/order_history',param)
   
 
   
