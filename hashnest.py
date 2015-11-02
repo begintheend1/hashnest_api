@@ -33,8 +33,8 @@ class hashnest(object):
     def request(self,url,req={}):
         url = self.URL + url
         data= self.signature(req)
-        request= urllib2.Request(url, data)
-        resp = urllib2.urlopen(request)
+        info = urllib2.Request(url, data)
+        resp = urllib2.urlopen(info)
         r=resp.read()
         return r
   
